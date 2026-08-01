@@ -1,7 +1,6 @@
 
 name: DevSecOps - tfsec Scanner
 
-# This workflow will run the tfsec security scanner on your Terraform code whenever there is a push to the main or master branch. It checks for potential security issues in your Terraform configurations and reports them.
 on:
   push:
     branches:
@@ -19,5 +18,7 @@ jobs:
 
       - name: Run tfsec Security Scanner
         uses: aquasecurity/tfsec-action@v1.0.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           soft_fail: true
