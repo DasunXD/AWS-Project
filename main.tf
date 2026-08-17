@@ -154,19 +154,28 @@ output "web_server_public_ip" {
   value = aws_instance.web_server.public_ip
 }
 
-# Creating Security Group for Database to allow traffic only from Web Server Security Group
+# Creating Security Group for Database to allow traffic from Web Server AND Bastion Host
 resource "aws_security_group" "db_sg" {
   name        = "sme-db-sg"
-  description = "Allow MySQL traffic from Web Server SG only"
+  description = "Allow MySQL traffic from Web Server and Bastion Host"
   vpc_id      = aws_vpc.my_first_vpc.id
 
-  # Inbound Rules: Allow MySQL traffic from the Web Server Security Group
+  # Inbound Rules 1: Allow MySQL traffic from the Web Server
   ingress {
     description     = "MySQL access from Web Server"
     from_port       = 3306
     to_port         = 3306
     protocol        = "tcp"
-    security_groups = [aws_security_group.allow_web_ssh.id] # connecting to the Web Server Security Group
+    security_groups = [aws_security_group.allow_web_ssh.id]
+  }
+
+  # Inbound Rules 2: Allow MySQL traffic from the Bastion Host (NEW)
+  ingress {
+    description     = "MySQL access from Bastion Host for Admin"
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [aws_security_group.bastion_sg.id]
   }
 
   # Outbound Rules
@@ -256,4 +265,51 @@ resource "aws_budgets_budget" "sme_cost_budget" {
     notification_type          = "ACTUAL"
     subscriber_email_addresses = ["ddilhara088@gmail.com"] 
   }
+}
+
+
+# Creating Security Group for Bastion Host
+resource "aws_security_group" "bastion_sg" {
+  name        = "sme-bastion-sg"
+  description = "Allow SSH access to Bastion Host for Admin"
+  vpc_id      = aws_vpc.my_first_vpc.id
+
+  ingress {
+    description = "SSH Access for Admin"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] 
+    # tfsec:ignore:aws-vpc-no-public-ingress-sgr
+  }
+
+  egress {
+    description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "SME-Bastion-Security-Group"
+  }
+}
+
+# Creating the Bastion Host EC2 Instance in the Public Subnet
+resource "aws_instance" "bastion_host" {
+  ami                         = data.aws_ami.amazon_linux.id
+  instance_type               = "t2.micro"
+  subnet_id                   = aws_subnet.public_subnet.id
+  vpc_security_group_ids      = [aws_security_group.bastion_sg.id]
+  associate_public_ip_address = true
+
+  tags = {
+    Name = "SME-Bastion-Host"
+  }
+}
+
+# Output the Bastion Host IP to easily find it
+output "bastion_host_public_ip" {
+  value = aws_instance.bastion_host.public_ip
 }
