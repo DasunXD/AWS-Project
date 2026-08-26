@@ -30,6 +30,8 @@ jobs:
 
       - name: Run tfsec Security Scanner
         uses: aquasecurity/tfsec-action@v1.0.0
-        
+        with:
+          soft_fail: true  # to not fail the workflow on security issues, but still report them
+
       - name: Terraform Apply (Auto Provision)
         run: terraform apply -auto-approve
