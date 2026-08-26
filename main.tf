@@ -5,7 +5,15 @@ terraform {
         version = "~> 5.0"
     }
   }
+  
+  # S3 bucket for for Github Actions to store the Terraform state file
+  backend "s3" {
+    bucket = "sme-terraform-state-dasun-2026" 
+    key    = "sme/terraform.tfstate"
+    region = "us-east-1"
+  }
 }
+
 provider "aws" {
   region = "us-east-1"
 }
