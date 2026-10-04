@@ -251,6 +251,9 @@ resource "aws_db_instance" "sme_database" {
   publicly_accessible    = false
   storage_encrypted      = true # AWS KMS Encryption Enabled (Zero Cost)
 
+  backup_retention_period = 7  # Retain automated backups for 7 days                     
+  backup_window           = "02:00-03:00" # Backup window for automated backups
+
   tags = {
     Name = "SME-Private-Database-Encrypted"
   }
