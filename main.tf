@@ -323,4 +323,3 @@ output "bastion_host_public_ip" {
 }
 
 
-#Laptop Sync Test
