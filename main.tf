@@ -144,14 +144,17 @@ resource "aws_instance" "web_server" {
   vpc_security_group_ids      = [aws_security_group.allow_web_ssh.id]
   associate_public_ip_address = true
 
-  user_data = <<-EOF
-              #!/bin/bash
-              yum update -y
-              yum install -y httpd
-              systemctl start httpd
-              systemctl enable httpd
-              echo "<h1>Welcome to SME Project Web Server! Built with Terraform.</h1>" > /var/www/html/index.html
-              EOF
+  # Attach SSM IAM Profile & Automated Hospital System Script
+  iam_instance_profile        = aws_iam_instance_profile.web_server_profile.name
+  user_data_replace_on_change = true
+  user_data                   = base64gzip(replace(file("${path.module}/hospital_app.sh"), "\r\n", "\n"))
+
+  # Wait for RDS and SSM parameters to be ready before launching Web Server
+  depends_on = [
+    aws_db_instance.sme_database,
+    aws_ssm_parameter.db_password_param,
+    aws_ssm_parameter.public_db_password_param
+  ]
 
   tags = {
     Name = "SME-Web-Server"
